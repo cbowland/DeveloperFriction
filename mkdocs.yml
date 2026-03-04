@@ -1,0 +1,9 @@
+site_name: Developer Friction Survey
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - API Reference: api.md
+  - Local Development: development.md
+  - Building and Deploying: deployment.md
+plugins:
+  - techdocs-core

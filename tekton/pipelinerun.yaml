@@ -1,14 +1,28 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: developer-friction-survey-deploy-
+  generateName: developer-friction-survey-run-
   labels:
     app: developer-friction-survey
+    tekton.dev/pipeline: developer-friction-survey-build-deploy
 spec:
   pipelineRef:
-    name: developer-friction-survey-deploy
+    name: developer-friction-survey-build-deploy
   params:
+    - name: git-url
+      value: "https://github.com/cbowland/DeveloperFriction.git"
+    - name: git-revision
+      value: main
     - name: image
-      value: "quay.io/cbowland/developer-friction-survey:latest"
+      value: "quay.io/cbowland/developer-friction-survey"
     - name: app-name
       value: developer-friction-survey
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi

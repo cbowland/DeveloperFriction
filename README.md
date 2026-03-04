@@ -69,10 +69,12 @@ Each question offers three responses (Low/Medium/High friction). After submittin
 │       ├── store.ts
 │       └── routes/responses.ts
 ├── k8s/                     Plain OpenShift manifests (Deployment, Service, Route)
-├── tekton/                  Tekton Pipeline for deploying a prebuilt image
+├── tekton/                  Tekton Pipeline (build + deploy) and PipelineRun
+├── docs/                    Documentation (served via RHDH TechDocs)
 ├── Containerfile            Multi-stage container build (UBI 9)
-├── catalog-info.yaml        Backstage/RHDH component registration
-└── template.yaml            RHDH Software Template for scaffolding
+├── mkdocs.yml               MkDocs config for TechDocs
+├── catalog-info.yaml        RHDH component registration
+└── template.yaml            RHDH Software Template (installs pipeline + triggers build)
 ```
 
 ## Local Development
@@ -113,36 +115,37 @@ podman push quay.io/YOUR_ORG/developer-friction-survey:latest
 
 Make sure the repository visibility in quay.io is set appropriately for your OpenShift cluster to pull from it.
 
-## Deploying to OpenShift
+## Deploying via Red Hat Developer Hub (Recommended)
 
-### Option 1: Plain manifests
+RHDH uses a Software Template to install the Tekton pipeline and trigger a full build-and-deploy:
 
-Edit `k8s/deployment.yaml` and replace `quay.io/YOUR_ORG/developer-friction-survey:latest` with your actual image reference, then apply:
+1. Register `template.yaml` in your RHDH catalog locations.
+2. In RHDH, go to **Create** and choose **Deploy Developer Friction Survey**.
+3. Provide the target OpenShift namespace and confirm the defaults.
+4. RHDH installs the Tekton Pipeline, then triggers a PipelineRun that clones the repo, builds with Buildah, pushes to quay.io, and deploys.
+
+Monitor progress on the component's **CI** tab in RHDH.
+
+## Deploying via CLI
+
+### Tekton Pipeline
+
+```bash
+oc apply -f tekton/pipeline.yaml
+oc create -f tekton/pipelinerun.yaml
+```
+
+The pipeline clones the repo, builds the container with Buildah, pushes to `quay.io/cbowland/developer-friction-survey`, and deploys the app.
+
+### Plain Manifests
+
+If the image is already in quay.io:
 
 ```bash
 oc apply -f k8s/
+oc rollout status deployment/developer-friction-survey
 ```
 
-### Option 2: Tekton Pipeline
+## RHDH Integration
 
-The Tekton pipeline deploys a prebuilt container image from quay.io (no in-cluster build step).
-
-1. Apply the pipeline:
-
-   ```bash
-   oc apply -f tekton/pipeline.yaml
-   ```
-
-2. Edit `tekton/pipelinerun.yaml` and replace `YOUR_ORG` with your quay.io org, then run:
-
-   ```bash
-   oc create -f tekton/pipelinerun.yaml
-   ```
-
-   This creates the Deployment, Service, and Route, then waits for the rollout to complete.
-
-## Red Hat Developer Hub
-
-Register the Software Template in your RHDH instance by adding `template.yaml` to your catalog locations. The template prompts for an application name, OpenShift namespace, and Git repository, then scaffolds and publishes the project automatically.
-
-The `catalog-info.yaml` file registers the deployed component in the RHDH catalog for visibility and ownership tracking.
+The `catalog-info.yaml` registers the component in the RHDH catalog. Annotations connect it to the Kubernetes deployment and Tekton pipeline runs so you can monitor everything from the RHDH component page.

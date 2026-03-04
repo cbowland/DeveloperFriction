@@ -1,21 +1,21 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  name: developer-friction-survey
-  title: Developer Friction Survey
-  description: Scaffold a React + Node.js survey app for OpenShift
+  name: developer-friction-survey-deploy
+  title: Deploy Developer Friction Survey
+  description: Set up the Tekton pipeline and trigger a build-and-deploy for the Developer Friction Survey app on OpenShift
   tags:
     - nodejs
     - react
     - openshift
+    - tekton
 spec:
   owner: platform-team
   type: service
 
   parameters:
-    - title: Application Info
+    - title: Deployment Configuration
       required:
-        - appName
         - namespace
       properties:
         appName:
@@ -23,67 +23,196 @@ spec:
           type: string
           default: developer-friction-survey
           pattern: "^[a-z0-9-]+$"
-          description: Lowercase name used for the deployment and route
+          description: Name used for the OpenShift Deployment, Service, and Route
         namespace:
           title: OpenShift Namespace
           type: string
-          description: Target namespace for deployment
-        owner:
-          title: Owner
+          description: Target OpenShift namespace to deploy into
+        gitUrl:
+          title: Git Repository URL
           type: string
-          description: Team or user that owns this component
-          default: platform-team
-          ui:field: OwnerPicker
-          ui:options:
-            catalogFilter:
-              kind: Group
-
-    - title: Repository
-      required:
-        - repoUrl
-      properties:
-        repoUrl:
-          title: Repository Location
+          default: "https://github.com/cbowland/DeveloperFriction.git"
+          description: Git repository containing the application source
+        gitRevision:
+          title: Git Branch
           type: string
-          ui:field: RepoUrlPicker
-          ui:options:
-            allowedHosts:
-              - github.com
-              - gitlab.com
+          default: main
+          description: Branch or revision to build
+        imageRepo:
+          title: Quay.io Image
+          type: string
+          default: "quay.io/cbowland/developer-friction-survey"
+          description: Quay.io image name (without tag)
 
   steps:
-    - id: fetch-skeleton
-      name: Fetch Skeleton
-      action: fetch:template
+    - id: apply-pipeline
+      name: Install Tekton Pipeline
+      action: kubernetes:apply
       input:
-        url: ./skeleton
-        values:
-          appName: ${{ parameters.appName }}
-          namespace: ${{ parameters.namespace }}
-          owner: ${{ parameters.owner }}
+        namespaced: true
+        namespace: ${{ parameters.namespace }}
+        manifest: |
+          apiVersion: tekton.dev/v1beta1
+          kind: Pipeline
+          metadata:
+            name: developer-friction-survey-build-deploy
+            labels:
+              app: ${{ parameters.appName }}
+          spec:
+            params:
+              - name: git-url
+                type: string
+              - name: git-revision
+                type: string
+                default: main
+              - name: image
+                type: string
+              - name: app-name
+                type: string
+                default: developer-friction-survey
+            workspaces:
+              - name: source
+            tasks:
+              - name: git-clone
+                taskRef:
+                  name: git-clone
+                  kind: ClusterTask
+                params:
+                  - name: url
+                    value: $(params.git-url)
+                  - name: revision
+                    value: $(params.git-revision)
+                workspaces:
+                  - name: output
+                    workspace: source
+              - name: build-push
+                taskRef:
+                  name: buildah
+                  kind: ClusterTask
+                runAfter:
+                  - git-clone
+                params:
+                  - name: IMAGE
+                    value: $(params.image):$(tasks.git-clone.results.commit)
+                  - name: DOCKERFILE
+                    value: ./Containerfile
+                  - name: TLSVERIFY
+                    value: "false"
+                workspaces:
+                  - name: source
+                    workspace: source
+              - name: deploy
+                runAfter:
+                  - build-push
+                taskSpec:
+                  params:
+                    - name: IMAGE
+                      type: string
+                    - name: APP_NAME
+                      type: string
+                  steps:
+                    - name: apply-and-rollout
+                      image: registry.redhat.io/openshift4/ose-cli:latest
+                      script: |
+                        #!/usr/bin/env bash
+                        set -euo pipefail
+                        cat <<EOF | oc apply -f -
+                        apiVersion: apps/v1
+                        kind: Deployment
+                        metadata:
+                          name: $(params.APP_NAME)
+                          labels:
+                            app: $(params.APP_NAME)
+                        spec:
+                          replicas: 1
+                          selector:
+                            matchLabels:
+                              app: $(params.APP_NAME)
+                          template:
+                            metadata:
+                              labels:
+                                app: $(params.APP_NAME)
+                            spec:
+                              containers:
+                                - name: survey
+                                  image: $(params.IMAGE)
+                                  imagePullPolicy: Always
+                                  ports:
+                                    - containerPort: 8080
+                        ---
+                        apiVersion: v1
+                        kind: Service
+                        metadata:
+                          name: $(params.APP_NAME)
+                        spec:
+                          selector:
+                            app: $(params.APP_NAME)
+                          ports:
+                            - port: 8080
+                              targetPort: 8080
+                        ---
+                        apiVersion: route.openshift.io/v1
+                        kind: Route
+                        metadata:
+                          name: $(params.APP_NAME)
+                        spec:
+                          to:
+                            kind: Service
+                            name: $(params.APP_NAME)
+                          port:
+                            targetPort: 8080
+                          tls:
+                            termination: edge
+                            insecureEdgeTerminationPolicy: Redirect
+                        EOF
+                        oc rollout restart deployment/$(params.APP_NAME) || true
+                        oc rollout status deployment/$(params.APP_NAME) --timeout=120s
+                params:
+                  - name: IMAGE
+                    value: $(params.image):$(tasks.git-clone.results.commit)
+                  - name: APP_NAME
+                    value: $(params.app-name)
 
-    - id: publish
-      name: Publish to Git
-      action: publish:github
+    - id: trigger-build
+      name: Trigger Initial Build
+      action: kubernetes:apply
       input:
-        allowedHosts:
-          - github.com
-        repoUrl: ${{ parameters.repoUrl }}
-        description: "Developer Friction Survey app for ${{ parameters.namespace }}"
-        defaultBranch: main
-        repoVisibility: internal
-
-    - id: register
-      name: Register in Catalog
-      action: catalog:register
-      input:
-        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
-        catalogInfoPath: /catalog-info.yaml
+        namespaced: true
+        namespace: ${{ parameters.namespace }}
+        manifest: |
+          apiVersion: tekton.dev/v1beta1
+          kind: PipelineRun
+          metadata:
+            generateName: ${{ parameters.appName }}-run-
+            labels:
+              app: ${{ parameters.appName }}
+              tekton.dev/pipeline: developer-friction-survey-build-deploy
+          spec:
+            pipelineRef:
+              name: developer-friction-survey-build-deploy
+            params:
+              - name: git-url
+                value: "${{ parameters.gitUrl }}"
+              - name: git-revision
+                value: "${{ parameters.gitRevision }}"
+              - name: image
+                value: "${{ parameters.imageRepo }}"
+              - name: app-name
+                value: "${{ parameters.appName }}"
+            workspaces:
+              - name: source
+                volumeClaimTemplate:
+                  spec:
+                    accessModes:
+                      - ReadWriteOnce
+                    resources:
+                      requests:
+                        storage: 1Gi
 
   output:
     links:
-      - title: Repository
-        url: ${{ steps['publish'].output.remoteUrl }}
       - title: Open in Catalog
         icon: catalog
-        entityRef: ${{ steps['register'].output.entityRef }}
+        entityRef: component:default/developer-friction-survey
+      - title: View Pipeline Runs
+        url: /catalog/default/component/developer-friction-survey/ci

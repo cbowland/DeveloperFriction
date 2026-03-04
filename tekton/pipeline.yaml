@@ -1,21 +1,88 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: developer-friction-survey-deploy
+  name: developer-friction-survey-build-deploy
   labels:
     app: developer-friction-survey
 spec:
   params:
+    - name: git-url
+      type: string
+      description: Git repository URL
+    - name: git-revision
+      type: string
+      default: main
+      description: Git branch or revision to build
     - name: image
       type: string
-      description: Fully qualified quay.io image reference (e.g. quay.io/myorg/developer-friction-survey:latest)
+      default: quay.io/cbowland/developer-friction-survey
+      description: Image name to build and push (without tag)
     - name: app-name
       type: string
       default: developer-friction-survey
-      description: Application name used in OpenShift resources
+      description: Application name for OpenShift resources
+
+  workspaces:
+    - name: source
 
   tasks:
+    - name: git-clone
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: output
+          workspace: source
+
+    - name: build-push
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      runAfter:
+        - git-clone
+      params:
+        - name: IMAGE
+          value: $(params.image):$(tasks.git-clone.results.commit)
+        - name: DOCKERFILE
+          value: ./Containerfile
+        - name: TLSVERIFY
+          value: "false"
+      workspaces:
+        - name: source
+          workspace: source
+
+    - name: tag-latest
+      taskSpec:
+        params:
+          - name: SOURCE_IMAGE
+            type: string
+          - name: TARGET_IMAGE
+            type: string
+        steps:
+          - name: tag
+            image: registry.redhat.io/ubi9/skopeo:latest
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              skopeo copy --src-tls-verify=false --dest-tls-verify=false \
+                "docker://$(params.SOURCE_IMAGE)" \
+                "docker://$(params.TARGET_IMAGE)"
+      runAfter:
+        - build-push
+      params:
+        - name: SOURCE_IMAGE
+          value: $(params.image):$(tasks.git-clone.results.commit)
+        - name: TARGET_IMAGE
+          value: $(params.image):latest
+
     - name: deploy
+      runAfter:
+        - tag-latest
       taskSpec:
         params:
           - name: IMAGE
@@ -23,7 +90,7 @@ spec:
           - name: APP_NAME
             type: string
         steps:
-          - name: apply-manifests
+          - name: apply-and-rollout
             image: registry.redhat.io/openshift4/ose-cli:latest
             script: |
               #!/usr/bin/env bash
@@ -112,11 +179,12 @@ spec:
                   insecureEdgeTerminationPolicy: Redirect
               EOF
 
+              oc rollout restart deployment/$(params.APP_NAME)
               echo "Waiting for rollout..."
               oc rollout status deployment/$(params.APP_NAME) --timeout=120s
               echo "Deployment complete"
       params:
         - name: IMAGE
-          value: $(params.image)
+          value: $(params.image):$(tasks.git-clone.results.commit)
         - name: APP_NAME
           value: $(params.app-name)
