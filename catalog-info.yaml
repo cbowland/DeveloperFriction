@@ -6,6 +6,7 @@ metadata:
   annotations:
     backstage.io/techdocs-ref: dir:.
     backstage.io/kubernetes-id: developer-friction-survey
+    backstage.io/kubernetes-namespace: bobcat
     backstage.io/kubernetes-label-selector: app=developer-friction-survey
     janus-idp.io/tekton: developer-friction-survey
   tags:

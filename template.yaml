@@ -186,6 +186,7 @@ spec:
             generateName: ${{ parameters.appName }}-run-
             labels:
               app: ${{ parameters.appName }}
+              backstage.io/kubernetes-id: ${{ parameters.appName }}
               tekton.dev/pipeline: developer-friction-survey-build-deploy
           spec:
             pipelineRef:
