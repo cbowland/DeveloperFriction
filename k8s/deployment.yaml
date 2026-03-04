@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: survey
-          image: quay.io/YOUR_ORG/developer-friction-survey:latest
+          image: quay.io/cbowland/developer-friction-survey:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

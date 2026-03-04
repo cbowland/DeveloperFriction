@@ -9,6 +9,6 @@ spec:
     name: developer-friction-survey-deploy
   params:
     - name: image
-      value: "quay.io/YOUR_ORG/developer-friction-survey:latest"
+      value: "quay.io/cbowland/developer-friction-survey:latest"
     - name: app-name
       value: developer-friction-survey
