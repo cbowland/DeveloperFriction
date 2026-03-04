@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: developer-friction-survey-deploy-
+  labels:
+    app: developer-friction-survey
+spec:
+  pipelineRef:
+    name: developer-friction-survey-deploy
+  params:
+    - name: image
+      value: "quay.io/YOUR_ORG/developer-friction-survey:latest"
+    - name: app-name
+      value: developer-friction-survey

@@ -1,0 +1,89 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: developer-friction-survey
+  title: Developer Friction Survey
+  description: Scaffold a React + Node.js survey app for OpenShift
+  tags:
+    - nodejs
+    - react
+    - openshift
+spec:
+  owner: platform-team
+  type: service
+
+  parameters:
+    - title: Application Info
+      required:
+        - appName
+        - namespace
+      properties:
+        appName:
+          title: Application Name
+          type: string
+          default: developer-friction-survey
+          pattern: "^[a-z0-9-]+$"
+          description: Lowercase name used for the deployment and route
+        namespace:
+          title: OpenShift Namespace
+          type: string
+          description: Target namespace for deployment
+        owner:
+          title: Owner
+          type: string
+          description: Team or user that owns this component
+          default: platform-team
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+    - title: Repository
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+              - gitlab.com
+
+  steps:
+    - id: fetch-skeleton
+      name: Fetch Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          appName: ${{ parameters.appName }}
+          namespace: ${{ parameters.namespace }}
+          owner: ${{ parameters.owner }}
+
+    - id: publish
+      name: Publish to Git
+      action: publish:github
+      input:
+        allowedHosts:
+          - github.com
+        repoUrl: ${{ parameters.repoUrl }}
+        description: "Developer Friction Survey app for ${{ parameters.namespace }}"
+        defaultBranch: main
+        repoVisibility: internal
+
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in Catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}

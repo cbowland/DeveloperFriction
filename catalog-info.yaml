@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: developer-friction-survey
+  description: A survey SPA for measuring developer friction, built with React and Node.js
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/kubernetes-id: developer-friction-survey
+  tags:
+    - nodejs
+    - react
+    - survey
+spec:
+  type: service
+  lifecycle: experimental
+  owner: platform-team
+  providesApis: []

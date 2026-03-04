@@ -1,0 +1,16 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: developer-friction-survey
+  labels:
+    app: developer-friction-survey
+spec:
+  to:
+    kind: Service
+    name: developer-friction-survey
+    weight: 100
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

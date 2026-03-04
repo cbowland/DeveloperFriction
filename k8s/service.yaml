@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: developer-friction-survey
+  labels:
+    app: developer-friction-survey
+spec:
+  selector:
+    app: developer-friction-survey
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP

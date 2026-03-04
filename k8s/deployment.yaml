@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: developer-friction-survey
+  labels:
+    app: developer-friction-survey
+    app.kubernetes.io/name: developer-friction-survey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: developer-friction-survey
+  template:
+    metadata:
+      labels:
+        app: developer-friction-survey
+        app.kubernetes.io/name: developer-friction-survey
+    spec:
+      containers:
+        - name: survey
+          image: quay.io/YOUR_ORG/developer-friction-survey:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
