@@ -100,7 +100,7 @@ components:
           description: CI/CD pipeline experience
         q3:
           $ref: "#/components/schemas/AnswerValue"
-          description: Component reuse difficulty
+          description: Finding documentation difficulty
 
     SurveyResponse:
       type: object

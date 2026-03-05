@@ -23,7 +23,7 @@ interface Props {
 const questionLabels: Record<string, string> = {
   q1: "Dev Environment Setup",
   q2: "CI/CD Experience",
-  q3: "Component Reuse",
+  q3: "Finding Documentation",
 };
 
 const optionLabels: Record<string, string> = {

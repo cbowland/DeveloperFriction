@@ -25,11 +25,11 @@ const questions = [
   },
   {
     key: "q3" as const,
-    text: "How easy is it to find and reuse existing components or services?",
+    text: "How easy is it to find the documentation you need?",
     options: [
-      { value: 1, label: "Easy -- good catalog and documentation" },
-      { value: 2, label: "Moderate -- some things are discoverable" },
-      { value: 3, label: "Difficult -- mostly tribal knowledge" },
+      { value: 1, label: "Easy -- docs are well-organized and up to date" },
+      { value: 2, label: "Moderate -- some docs exist but gaps are common" },
+      { value: 3, label: "Difficult -- docs are missing, outdated, or hard to find" },
     ],
   },
 ];

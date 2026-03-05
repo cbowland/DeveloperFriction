@@ -22,7 +22,7 @@ Submits a single survey response. Each answer must be an integer from 1 to 3.
 |-------|---------|----------|------------------------------------------|
 | q1    | integer | yes      | Dev environment setup friction (1-3)     |
 | q2    | integer | yes      | CI/CD pipeline experience (1-3)          |
-| q3    | integer | yes      | Component reuse difficulty (1-3)         |
+| q3    | integer | yes      | Finding documentation difficulty (1-3)   |
 
 ### Answer Values
 

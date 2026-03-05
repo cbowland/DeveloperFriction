@@ -8,7 +8,7 @@ The survey measures friction across three dimensions:
 
 1. **Development Environment Setup** -- How much friction happens getting a dev environment running?
 2. **CI/CD Pipeline Experience** -- How reliable and fast are builds and deploys?
-3. **Component Reuse & Discovery** -- How easy is it to find and reuse existing services?
+3. **Finding Documentation** -- How easy is it to find the documentation you need?
 
 Each question offers three responses (Low/Medium/High friction). After submitting, the user sees a bar chart of all responses collected so far.
 

@@ -10,7 +10,7 @@ This tool is designed to give platform teams a quick, lightweight way to measure
 
 ## Key Features
 
-- Three targeted questions covering environment setup, CI/CD, and component reuse
+- Three targeted questions covering environment setup, CI/CD, and finding documentation
 - Real-time aggregated results displayed as a grouped bar chart
 - No database required -- responses are stored in memory
 - Single container deployment on OpenShift
