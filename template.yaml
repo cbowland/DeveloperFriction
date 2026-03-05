@@ -128,10 +128,12 @@ spec:
                           selector:
                             matchLabels:
                               app: $(params.APP_NAME)
+                              app.kubernetes.io/component: server
                           template:
                             metadata:
                               labels:
                                 app: $(params.APP_NAME)
+                                app.kubernetes.io/component: server
                             spec:
                               containers:
                                 - name: survey
@@ -147,6 +149,7 @@ spec:
                         spec:
                           selector:
                             app: $(params.APP_NAME)
+                            app.kubernetes.io/component: server
                           ports:
                             - port: 8080
                               targetPort: 8080

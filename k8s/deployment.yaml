@@ -10,11 +10,13 @@ spec:
   selector:
     matchLabels:
       app: developer-friction-survey
+      app.kubernetes.io/component: server
   template:
     metadata:
       labels:
         app: developer-friction-survey
         app.kubernetes.io/name: developer-friction-survey
+        app.kubernetes.io/component: server
     spec:
       containers:
         - name: survey
