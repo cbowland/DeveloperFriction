@@ -13,9 +13,54 @@ RHDH can install the Tekton pipeline on the cluster and trigger a full build-and
 
 Monitor the pipeline run on the component's **CI** tab in RHDH.
 
+## Automatic Builds on Git Push
+
+Tekton Triggers allow the pipeline to run automatically whenever code is pushed to the GitHub repo.
+
+### Setup
+
+1. Apply all Tekton resources to the target namespace:
+
+    ```bash
+    oc project bobcat
+    oc apply -f tekton/
+    ```
+
+    This installs:
+
+    - `pipeline.yaml` -- the build-and-deploy pipeline
+    - `trigger-template.yaml` -- defines the PipelineRun created on each trigger
+    - `trigger-binding.yaml` -- extracts git URL, branch, and commit from the GitHub webhook payload
+    - `event-listener.yaml` -- receives incoming webhook events and filters for push events
+    - `event-listener-route.yaml` -- exposes the EventListener externally via an OpenShift Route
+
+2. Get the webhook URL:
+
+    ```bash
+    oc get route developer-friction-survey-webhook -o jsonpath='https://{.spec.host}'
+    ```
+
+3. In your GitHub repo, go to **Settings > Webhooks > Add webhook**:
+    - **Payload URL**: the route URL from step 2
+    - **Content type**: `application/json`
+    - **Events**: select **Just the push event**
+    - **Active**: checked
+
+Once configured, every `git push` to the repo triggers a new PipelineRun that builds, pushes, and deploys the latest code.
+
+### How It Works
+
+```
+GitHub push event
+  → EventListener (receives webhook)
+  → TriggerBinding (extracts repo URL, branch, commit)
+  → TriggerTemplate (creates PipelineRun)
+  → Pipeline (git-clone → buildah → tag-latest → deploy)
+```
+
 ## Deploying via CLI
 
-### Option 1: Tekton Pipeline
+### Option 1: Tekton Pipeline (manual trigger)
 
 Install the pipeline and trigger a build-and-deploy manually:
 
@@ -66,10 +111,11 @@ oc get route developer-friction-survey -o jsonpath='{.spec.host}'
 
 The component is registered in RHDH via `catalog-info.yaml`. Key annotations:
 
-| Annotation                                | Purpose                                         |
-|-------------------------------------------|-------------------------------------------------|
-| `backstage.io/kubernetes-id`              | Links component to Kubernetes resources          |
-| `backstage.io/kubernetes-label-selector`  | Allows RHDH to find the running deployment       |
+| Annotation                                | Purpose                                          |
+|-------------------------------------------|--------------------------------------------------|
+| `backstage.io/kubernetes-id`              | Links component to Kubernetes resources           |
+| `backstage.io/kubernetes-namespace`       | Tells RHDH which namespace to query               |
+| `backstage.io/kubernetes-label-selector`  | Allows RHDH to find the running deployment        |
 | `janus-idp.io/tekton`                     | Displays Tekton pipeline runs on the component page |
 
 To register the component, go to **Create > Register Existing Component** in RHDH and enter the URL to `catalog-info.yaml` in your GitHub repository.

@@ -1,0 +1,45 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: developer-friction-survey-trigger
+  labels:
+    app: developer-friction-survey
+spec:
+  params:
+    - name: git-url
+      description: Git repository URL
+    - name: git-revision
+      description: Git branch or revision
+      default: main
+    - name: git-commit
+      description: Git commit SHA
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: developer-friction-survey-run-
+        labels:
+          app: developer-friction-survey
+          backstage.io/kubernetes-id: developer-friction-survey
+          tekton.dev/pipeline: developer-friction-survey-build-deploy
+      spec:
+        pipelineRef:
+          name: developer-friction-survey-build-deploy
+        params:
+          - name: git-url
+            value: $(tt.params.git-url)
+          - name: git-revision
+            value: $(tt.params.git-revision)
+          - name: image
+            value: quay.io/cbowland/developer-friction-survey
+          - name: app-name
+            value: developer-friction-survey
+        workspaces:
+          - name: source
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi

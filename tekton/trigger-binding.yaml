@@ -1,0 +1,14 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: developer-friction-survey-binding
+  labels:
+    app: developer-friction-survey
+spec:
+  params:
+    - name: git-url
+      value: $(body.repository.clone_url)
+    - name: git-revision
+      value: $(body.ref)
+    - name: git-commit
+      value: $(body.after)

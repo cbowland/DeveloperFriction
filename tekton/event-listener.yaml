@@ -1,0 +1,21 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: developer-friction-survey-listener
+  labels:
+    app: developer-friction-survey
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: github-push
+      interceptors:
+        - ref:
+            name: github
+          params:
+            - name: eventTypes
+              value:
+                - push
+      bindings:
+        - ref: developer-friction-survey-binding
+      template:
+        ref: developer-friction-survey-trigger

@@ -69,7 +69,7 @@ Each question offers three responses (Low/Medium/High friction). After submittin
 │       ├── store.ts
 │       └── routes/responses.ts
 ├── k8s/                     Plain OpenShift manifests (Deployment, Service, Route)
-├── tekton/                  Tekton Pipeline (build + deploy) and PipelineRun
+├── tekton/                  Tekton Pipeline, Triggers, and EventListener
 ├── docs/                    Documentation (served via RHDH TechDocs)
 ├── Containerfile            Multi-stage container build (UBI 9)
 ├── mkdocs.yml               MkDocs config for TechDocs
@@ -126,9 +126,36 @@ RHDH uses a Software Template to install the Tekton pipeline and trigger a full 
 
 Monitor progress on the component's **CI** tab in RHDH.
 
+## Automatic Builds on Git Push
+
+Tekton Triggers are included to automatically rebuild and redeploy whenever you push to the GitHub repo.
+
+### Setup
+
+1. Apply all Tekton resources (pipeline, triggers, event listener, and route):
+
+    ```bash
+    oc project bobcat
+    oc apply -f tekton/
+    ```
+
+2. Get the webhook URL:
+
+    ```bash
+    oc get route developer-friction-survey-webhook -o jsonpath='https://{.spec.host}'
+    ```
+
+3. In your GitHub repo, go to **Settings > Webhooks > Add webhook**:
+    - **Payload URL**: the route URL from step 2
+    - **Content type**: `application/json`
+    - **Events**: select **Just the push event**
+    - **Active**: checked
+
+Every push to the repo will now trigger a full build-and-deploy pipeline run automatically.
+
 ## Deploying via CLI
 
-### Tekton Pipeline
+### Tekton Pipeline (manual trigger)
 
 ```bash
 oc apply -f tekton/pipeline.yaml

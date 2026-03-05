@@ -49,10 +49,17 @@ The application runs as a single container with both the frontend and backend bu
 │       ├── store.ts         In-memory response storage
 │       └── routes/
 │           └── responses.ts POST and GET endpoints
-├── k8s/                     OpenShift manifests
-├── tekton/                  Tekton Pipeline for deployment
+├── k8s/                     OpenShift manifests (Deployment, Service, Route)
+├── tekton/                  Tekton Pipeline, Triggers, and EventListener
+│   ├── pipeline.yaml        Build-and-deploy pipeline
+│   ├── pipelinerun.yaml     Manual trigger template
+│   ├── trigger-template.yaml    PipelineRun template for webhook triggers
+│   ├── trigger-binding.yaml     Extracts params from GitHub webhook payload
+│   ├── event-listener.yaml      Receives GitHub push events
+│   └── event-listener-route.yaml  Exposes EventListener externally
 ├── docs/                    Documentation (this directory)
 ├── Containerfile            Multi-stage container build (UBI 9)
+├── mkdocs.yml               MkDocs config for TechDocs
 ├── catalog-info.yaml        RHDH component registration
 └── template.yaml            RHDH Software Template
 ```
