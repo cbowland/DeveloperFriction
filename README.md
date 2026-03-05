@@ -6,7 +6,7 @@ A single-page application that collects developer experience feedback through a 
 
 The survey measures friction across three dimensions:
 
-1. **Development Environment Setup** -- How much friction getting a dev environment running?
+1. **Development Environment Setup** -- How much friction happens getting a dev environment running?
 2. **CI/CD Pipeline Experience** -- How reliable and fast are builds and deploys?
 3. **Component Reuse & Discovery** -- How easy is it to find and reuse existing services?
 
