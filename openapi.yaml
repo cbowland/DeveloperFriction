@@ -1,0 +1,148 @@
+openapi: 3.0.3
+info:
+  title: Developer Friction Survey API
+  description: REST API for submitting developer friction survey responses and retrieving aggregated results.
+  version: 1.0.0
+  contact:
+    name: Platform Team
+
+servers:
+  - url: /api
+    description: Relative to application root
+
+paths:
+  /responses:
+    post:
+      summary: Submit a survey response
+      description: >
+        Accepts answers to the three survey questions. Each answer must be
+        an integer from 1 (low friction) to 3 (high friction).
+      operationId: submitResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SurveySubmission"
+            example:
+              q1: 2
+              q2: 1
+              q3: 3
+      responses:
+        "201":
+          description: Response recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SurveyResponse"
+              example:
+                q1: 2
+                q2: 1
+                q3: 3
+                submittedAt: "2026-03-04T15:30:00.000Z"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Each answer must be 1, 2, or 3"
+
+  /responses/results:
+    get:
+      summary: Get aggregated survey results
+      description: >
+        Returns the count of responses for each option on each question,
+        plus the total number of responses submitted.
+      operationId: getResults
+      responses:
+        "200":
+          description: Aggregated results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregatedResults"
+              example:
+                q1:
+                  "1": 12
+                  "2": 34
+                  "3": 8
+                q2:
+                  "1": 20
+                  "2": 15
+                  "3": 19
+                q3:
+                  "1": 5
+                  "2": 30
+                  "3": 19
+                total: 54
+
+components:
+  schemas:
+    AnswerValue:
+      type: integer
+      enum: [1, 2, 3]
+      description: >
+        1 = Low friction / Great / Easy,
+        2 = Medium friction / Okay / Moderate,
+        3 = High friction / Poor / Difficult
+
+    SurveySubmission:
+      type: object
+      required: [q1, q2, q3]
+      properties:
+        q1:
+          $ref: "#/components/schemas/AnswerValue"
+          description: Dev environment setup friction
+        q2:
+          $ref: "#/components/schemas/AnswerValue"
+          description: CI/CD pipeline experience
+        q3:
+          $ref: "#/components/schemas/AnswerValue"
+          description: Component reuse difficulty
+
+    SurveyResponse:
+      type: object
+      properties:
+        q1:
+          $ref: "#/components/schemas/AnswerValue"
+        q2:
+          $ref: "#/components/schemas/AnswerValue"
+        q3:
+          $ref: "#/components/schemas/AnswerValue"
+        submittedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the response was recorded
+
+    OptionCounts:
+      type: object
+      description: Count of responses for each option (1, 2, 3)
+      properties:
+        "1":
+          type: integer
+        "2":
+          type: integer
+        "3":
+          type: integer
+
+    AggregatedResults:
+      type: object
+      properties:
+        q1:
+          $ref: "#/components/schemas/OptionCounts"
+        q2:
+          $ref: "#/components/schemas/OptionCounts"
+        q3:
+          $ref: "#/components/schemas/OptionCounts"
+        total:
+          type: integer
+          description: Total number of responses submitted
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message

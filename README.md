@@ -73,7 +73,8 @@ Each question offers three responses (Low/Medium/High friction). After submittin
 ├── docs/                    Documentation (served via RHDH TechDocs)
 ├── Containerfile            Multi-stage container build (UBI 9)
 ├── mkdocs.yml               MkDocs config for TechDocs
-├── catalog-info.yaml        RHDH component registration
+├── openapi.yaml             OpenAPI 3.0 spec for the REST API
+├── catalog-info.yaml        RHDH component and API registration
 └── template.yaml            RHDH Software Template (installs pipeline + triggers build)
 ```
 

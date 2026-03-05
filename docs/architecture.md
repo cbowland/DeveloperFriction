@@ -60,6 +60,7 @@ The application runs as a single container with both the frontend and backend bu
 ├── docs/                    Documentation (this directory)
 ├── Containerfile            Multi-stage container build (UBI 9)
 ├── mkdocs.yml               MkDocs config for TechDocs
-├── catalog-info.yaml        RHDH component registration
+├── openapi.yaml             OpenAPI 3.0 spec for the REST API
+├── catalog-info.yaml        RHDH component and API registration
 └── template.yaml            RHDH Software Template
 ```

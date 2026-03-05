@@ -17,4 +17,20 @@ spec:
   type: service
   lifecycle: experimental
   owner: User1
-  providesApis: []
+  providesApis:
+    - developer-friction-survey-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: developer-friction-survey-api
+  description: REST API for submitting survey responses and retrieving aggregated results
+  tags:
+    - rest
+    - survey
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: User1
+  definition:
+    $text: ./openapi.yaml
